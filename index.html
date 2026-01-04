@@ -45,18 +45,34 @@
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #000; display: flex; flex-direction: column;
     justify-content: center; align-items: center; z-index: 1000;
-    transition: all 1.5s cubic-bezier(0.7, 0, 0.3, 1);
+    transition: all 1.5s cubic-bezier(0.7, 0, 0.3, 1), background-color 0.3s ease;
   }
+
+  /* New Red Beat Animation */
+  #login-screen.red-beat {
+    background-color: #800000 !important; /* Deep Red */
+    animation: pulseRed 0.4s ease-out;
+  }
+
+  @keyframes pulseRed {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+
   #login-screen.unlocked { opacity: 0; transform: scale(5); filter: blur(40px) brightness(8); pointer-events: none; }
   .login-container { text-align: center; font-family: 'Courier New', monospace; width: 100%; }
-  #login-header { color: #ff0000; letter-spacing: 3px; margin-bottom: 20px; font-size: 1.5rem; }
+  #login-header { color: #ff0000; letter-spacing: 3px; margin-bottom: 20px; font-size: 1.5rem; transition: color 0.3s; }
   #pass-input { background: transparent; border: 2px solid #ff0000; padding: 12px; color: white; text-align: center; border-radius: 8px; width: 250px; outline: none; font-size: 1.2rem; }
+  
+  .rumble { animation: vibe 0.1s infinite; }
+  @keyframes vibe { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
 
   /* --- 2. Tracing Screen --- */
   #tracing-container {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     display: none; flex-direction: column; justify-content: center;
-    align-items: center; z-index: 500; background: var(--bg-1);
+    align-items: center; z-index: 9999; background: var(--bg-1);
     transition: opacity 0.8s ease, transform 0.8s ease;
   }
   #tracing-canvas { touch-action: none; cursor: crosshair; }
@@ -72,18 +88,7 @@
   }
   .card.show { display: block; opacity: 1; transform: scale(1); transition: all 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-  /* --- Polaroid Secret --- */
-  #photo-popup {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-    background: white; padding: 10px 10px 35px 10px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-    z-index: 2000; cursor: pointer; border: 1px solid #ddd; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-  #photo-popup.show { transform: translate(-50%, -50%) scale(1) rotate(5deg); }
-  #photo-popup img { width: 260px; height: 320px; object-fit: cover; }
-  #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1999; display:none; backdrop-filter: blur(5px); }
-  .secret-link { color: var(--accent); text-decoration: underline dotted; cursor: help; font-weight: bold; }
-
-  /* UI Animation & Misc */
+  /* UI Extras */
   #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; z-index: 1001; pointer-events: none; transition: opacity 0.6s; }
   .heart { color: var(--accent); font-size: 70px; display: inline-block; animation: beat 1.2s infinite ease-in-out; cursor: pointer; transition: color 0.5s ease; }
   h1 { color: var(--accent); font-size: 2.2rem; margin: 20px 0; transition: all 0.5s; }
@@ -99,8 +104,6 @@
 </head>
 <body>
   <div id="flash"></div>
-  <div id="overlay" onclick="togglePhoto()"></div>
-  <div id="photo-popup" onclick="togglePhoto()"><img src="us.jpg" alt="Memory"></div>
 
   <div id="login-screen">
     <div class="login-container" id="login-box">
@@ -117,7 +120,7 @@
 
   <div id="bg-gradient"></div>
   <div class="card" id="card">
-    <div class="heart" onclick="handleHeartClick()">❤️</div>
+    <div class="heart" id="interactive-heart" onclick="handleHeartClick()">❤️</div>
     <h1 id="title">Click the heart, Maiko!</h1>
     <div id="reveal-section" style="display:none; opacity:0; transition: opacity 0.8s;">
       <div class="message-container"><p id="message"></p></div>
@@ -130,25 +133,40 @@
     const ctx = canvas.getContext('2d');
     const card = document.getElementById('card');
     const tracingContainer = document.getElementById('tracing-container');
+    const loginScreen = document.getElementById('login-screen');
+    const loginHeader = document.getElementById('login-header');
     let points = [];
     let isTracing = false;
 
     // --- 1. Password Logic ---
     document.getElementById('pass-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && e.target.value.toUpperCase() === 'BEN') {
-        document.getElementById('login-box').classList.add('granted');
-        document.getElementById('login-header').innerText = "ACCESS GRANTED";
-        document.getElementById('login-header').style.color = "#fff";
-        setTimeout(() => {
-          document.getElementById('login-screen').classList.add('unlocked');
+      if (e.key === 'Enter') {
+        const val = e.target.value.toUpperCase();
+        if (val === 'BEN') {
+          loginScreen.classList.add('rumble');
+          loginHeader.innerText = "ACCESS GRANTED";
+          loginHeader.style.color = "#fff";
           setTimeout(() => {
-            document.getElementById('flash').style.opacity = 1;
+            loginScreen.classList.add('unlocked');
             setTimeout(() => {
-              document.getElementById('flash').style.opacity = 0;
-              startTracingMode();
-            }, 400);
-          }, 800);
-        }, 1200);
+              document.getElementById('flash').style.opacity = 1;
+              setTimeout(() => {
+                document.getElementById('flash').style.opacity = 0;
+                startTracingMode();
+              }, 400);
+            }, 800);
+          }, 1200);
+        } else {
+          // --- WRONG PASSWORD BEAT ---
+          loginScreen.classList.add('red-beat');
+          loginHeader.innerText = "ACCESS DENIED";
+          e.target.value = ''; // Clear input
+          
+          setTimeout(() => {
+            loginScreen.classList.remove('red-beat');
+            loginHeader.innerText = "AUTHORIZATION REQUIRED";
+          }, 400);
+        }
       }
     });
 
@@ -168,11 +186,10 @@
       ctx.clearRect(0, 0, 320, 320);
       points.forEach(p => {
         ctx.fillStyle = p.hit ? '#ff4d6d' : '#ffccd5';
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.hit ? 7 : 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.hit ? 9 : 5, 0, Math.PI*2); ctx.fill();
       });
       if (points.every(p => p.hit)) {
-        // Transition Effect: Shatter & Bloom
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#ff4d6d', '#ffffff', '#ffccd5'] });
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
         tracingContainer.style.opacity = '0';
         tracingContainer.style.transform = 'scale(1.5)';
         setTimeout(() => {
@@ -185,17 +202,17 @@
     const moveHandler = (e) => {
       if (!isTracing) return;
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX || e.touches[0].clientX) - rect.left;
-      const y = (e.clientY || e.touches[0].clientY) - rect.top;
-      points.forEach(p => { if (Math.hypot(p.x - x, p.y - y) < 30) p.hit = true; });
+      const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+      const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+      points.forEach(p => { if (Math.hypot(p.x - x, p.y - y) < 35) p.hit = true; });
     };
 
     canvas.addEventListener('mousedown', () => isTracing = true);
-    canvas.addEventListener('touchstart', () => isTracing = true);
+    canvas.addEventListener('touchstart', (e) => { isTracing = true; e.preventDefault(); }, {passive: false});
     window.addEventListener('mouseup', () => isTracing = false);
     window.addEventListener('touchend', () => isTracing = false);
     canvas.addEventListener('mousemove', moveHandler);
-    canvas.addEventListener('touchmove', e => { e.preventDefault(); moveHandler(e); });
+    canvas.addEventListener('touchmove', e => { e.preventDefault(); moveHandler(e); }, {passive: false});
 
     // --- 3. Interaction & Sparkles ---
     let themeIndex = 0;
@@ -232,7 +249,8 @@
 
       const moveX = (e.clientX - window.innerWidth / 2) * 0.015;
       const moveY = (e.clientY - window.innerHeight / 2) * 0.015;
-      document.getElementById('bg-gradient').style.transform = `translate(${-moveX}px, ${-moveY}px)`;
+      const bg = document.getElementById('bg-gradient');
+      if(bg) bg.style.transform = `translate(${-moveX}px, ${-moveY}px)`;
       card.style.transform = `rotateY(${moveX * 0.8}deg) rotateX(${-moveY * 0.8}deg)`;
     });
 
@@ -247,14 +265,6 @@
     }, 600);
 
     // --- 4. Content Reveal ---
-    function togglePhoto() {
-      const p = document.getElementById('photo-popup');
-      const o = document.getElementById('overlay');
-      const showing = p.classList.toggle('show');
-      o.style.display = showing ? 'block' : 'none';
-      if(showing) confetti({ particleCount: 40, spread: 60, origin: { y: 0.5 }, colors: ['#ff4d6d', '#ffffff'] });
-    }
-
     function revealEverything() {
       const title = document.getElementById('title');
       title.style.opacity = 0;
@@ -270,7 +280,7 @@
     }
 
     function typeWriter() {
-      const full = `Hi Maiko!! Happy 22nd Birthday! At last, the age gap has officially disappeared. Sorry if I couldn't make the birthday card you showed me, as you know I'm not really an arts and crafts person myself, <span class="highlight">HOWEVER I am a DIGITALLY CREATIVE person HEHEHE, kaya I made this for YOU!!!</span><br><br>I hope you like it, I just wanna tell you that I'm extremely grateful for being my pinaka favorite person, you are my safe place, where I can show off my goofiest side, and my daily dose of happiness, love, and affection.<br><br>Everything about you is special, and I can't believe I'm <span class="secret-link" onclick="togglePhoto()">dating</span> someone like you! <span class="highlight">YOU ARE THE LOVE OF MY LIFE!!!</span> I’m so proud and in love of the person you are and everything you’re becoming. I LOVE YOU SO SO SO MUCH!!<br><br>I hope you enjoy your day kahit our plan is simple lang. Cheers to lasting til death and for the memories we make. <span class="highlight">HAPPY BIRTHDAY!! I love you!!</span>`;
+      const full = `Hi Maiko!! Happy 22nd Birthday! At last, the age gap has officially disappeared. Sorry if I couldn't make the birthday card you showed me, as you know I'm not really an arts and crafts person myself, <span class="highlight">HOWEVER I am a DIGITALLY CREATIVE person HEHEHE, kaya I made this for YOU!!!</span><br><br>I hope you like it, I just wanna tell you that I'm extremely grateful for being my pinaka favorite person, you are my safe place, where I can show off my goofiest side, and my daily dose of happiness, love, and affection.<br><br>Everything about you is special, and I can't believe I'm dating someone like you! <span class="highlight">YOU ARE THE LOVE OF MY LIFE!!!</span> I’m so proud and in love of the person you are and everything you’re becoming. I LOVE YOU SO SO SO MUCH!!<br><br>I hope you enjoy your day kahit our plan is simple lang. Cheers to lasting til death and for the memories we make. <span class="highlight">HAPPY BIRTHDAY!! I love you!!</span>`;
       let i = 0;
       const el = document.getElementById("message");
       function type() {
