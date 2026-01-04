@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classified: For Maiko ❤️</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-1: #fff0f3;
+    --bg-2: #ffccd5;
+    --accent: #ff4d6d;
+    --text: #590d22;
+    --card-bg: rgba(255, 255, 255, 0.95);
+  }
+
+  body { 
+    background: var(--bg-1);
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+    padding: 20px;
+    overflow: hidden;
+    perspective: 1000px;
+  }
+
+  /* --- Hyper-Drive Warp Animation --- */
+  #login-screen {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 1.5s ease-in, transform 2s cubic-bezier(0.7, 0, 0.3, 1), filter 2s ease-in;
+  }
+
+  #login-screen.unlocked {
+    opacity: 0;
+    transform: scale(5);
+    filter: blur(50px) brightness(8);
+    pointer-events: none;
+  }
+
+  #flash {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: white;
+    opacity: 0;
+    z-index: 1001;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+
+  .login-container {
+    text-align: center;
+    color: var(--accent);
+    font-family: 'Courier New', Courier, monospace;
+    transition: all 0.4s;
+    width: 100%;
+  }
+
+  .login-container.granted {
+    color: #fff;
+    text-shadow: 0 0 30px #fff, 0 0 50px var(--accent);
+    animation: glitch 0.15s infinite;
+  }
+
+  /* Centered Red Authorization Text */
+  #login-header {
+    color: #ff0000;
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  @keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-8px, 4px); }
+    40% { transform: translate(8px, -4px); }
+    60% { transform: translate(-4px, -8px); }
+    80% { transform: translate(4px, 8px); }
+    100% { transform: translate(0); }
+  }
+
+  #pass-input {
+    background: transparent;
+    border: 2px solid #ff0000;
+    padding: 12px;
+    color: white;
+    text-align: center;
+    font-size: 1.2rem;
+    outline: none;
+    border-radius: 8px;
+    width: 250px;
+    margin: 10px 0;
+    transition: box-shadow 0.3s;
+  }
+  
+  #pass-input:focus {
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+  }
+
+  .hint-text {
+    color: #555;
+    font-size: 0.8rem;
+    margin-top: 15px;
+    padding: 0 20px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.4;
+  }
+
+  /* --- Interactive Card UI --- */
+  .cursor-sparkle {
+    position: fixed; width: 8px; height: 8px; background: var(--accent);
+    border-radius: 50%; pointer-events: none; z-index: 9999;
+    transition: transform 0.1s, opacity 0.5s; opacity: 0.6;
+  }
+
+  #bg-gradient {
+    position: fixed; top: -10%; left: -10%; width: 120%; height: 120%;
+    background: radial-gradient(circle, var(--bg-1) 0%, var(--bg-2) 100%);
+    z-index: -2;
+  }
+
+  .floating-emoji {
+    position: absolute; bottom: -50px; font-size: 1.5rem; opacity: 0.6; z-index: -1;
+    animation: floatUp var(--duration) linear forwards;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.6; }
+    100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+  }
+
+  .card { 
+    background: var(--card-bg); 
+    padding: 50px 40px; 
+    border-radius: 30px; 
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1); 
+    text-align: center; 
+    max-width: 450px; 
+    width: 100%;
+    z-index: 10;
+    opacity: 0; 
+    transform: scale(0.2) rotate(-15deg);
+  }
+
+  .card.show {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    transition: all 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .heart { 
+    color: var(--accent); font-size: 70px; display: inline-block;
+    animation: beat 1.2s infinite ease-in-out; cursor: pointer;
+  }
+
+  h1 { 
+    color: var(--accent); font-size: 2.2rem; margin: 20px 0; 
+    transition: color 0.5s ease, opacity 0.3s ease; min-height: 2.6rem;
+  }
+
+  #reveal-section { display: none; opacity: 0; transition: opacity 0.8s ease; }
+
+  .message-container {
+    max-height: 280px; overflow-y: auto; padding: 10px; margin-top: 10px;
+    scrollbar-width: thin; scrollbar-color: var(--accent) transparent;
+  }
+
+  p { color: var(--text); font-size: 1.1rem; line-height: 1.6; text-align: left; }
+  .highlight { color: var(--accent); font-weight: bold; }
+
+  .footer-text {
+    margin-top: 25px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    opacity: 0;
+    transition: opacity 1s ease;
+    animation: colorPulse 3s infinite alternate;
+  }
+
+  @keyframes colorPulse {
+    0% { color: #ff4d6d; transform: scale(1); }
+    50% { color: #0284c7; transform: scale(1.05); }
+    100% { color: #ff758f; transform: scale(1); }
+  }
+
+  @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+</style>
+</head>
+<body>
+
+  <div id="flash"></div>
+
+  <div id="login-screen">
+    <div class="login-container" id="login-box">
+      <h2 id="login-header">AUTHORIZATION REQUIRED</h2>
+      <input type="password" id="pass-input" placeholder="Type here..." autofocus>
+      <p class="hint-text">HINT: The word we say every time we wake up in the morning</p>
+    </div>
+  </div>
+
+  <div id="bg-gradient"></div>
+
+  <div class="card" id="card">
+    <div class="heart" id="main-heart" onclick="handleHeartClick()">❤️</div>
+    <h1 id="title">Click the heart, Maiko!</h1>
+    <div id="reveal-section">
+      <div class="message-container">
+        <p id="message"></p>
+      </div>
+      <div class="footer-text" id="footer">HAPPY BIRTHDAY MAIKO!</div>
+    </div>
+  </div>
+
+  <script>
+    const passInput = document.getElementById('pass-input');
+    const loginScreen = document.getElementById('login-screen');
+    const loginBox = document.getElementById('login-box');
+    const card = document.getElementById('card');
+    const flash = document.getElementById('flash');
+
+    passInput.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        const val = passInput.value.toUpperCase();
+        if (val === 'BEN') {
+          loginBox.classList.add('granted');
+          document.getElementById('login-header').innerText = "ACCESS GRANTED";
+          document.getElementById('login-header').style.color = "#fff";
+          
+          setTimeout(() => {
+            loginScreen.classList.add('unlocked');
+            
+            setTimeout(() => {
+                flash.style.opacity = "1";
+                setTimeout(() => {
+                    card.classList.add('show');
+                    flash.style.opacity = "0";
+                    confetti({
+                        particleCount: 250,
+                        spread: 120,
+                        origin: { y: 0.5 },
+                        colors: ['#ffffff', '#ff4d6d', '#ffccd5', '#0284c7']
+                    });
+                }, 400);
+            }, 800);
+          }, 1200);
+
+        } else {
+          document.getElementById('login-header').innerText = "ACCESS DENIED";
+          passInput.value = '';
+          loginBox.style.animation = "glitch 0.1s 4";
+          setTimeout(() => { 
+            loginBox.style.animation = ""; 
+            document.getElementById('login-header').innerText = "AUTHORIZATION REQUIRED";
+          }, 600);
+        }
+      }
+    });
+
+    let themeIndex = 0;
+    let isRevealed = false;
+    const themes = [
+      { bg1: '#fff0f3', bg2: '#ffccd5', accent: '#ff4d6d', text: '#590d22', card: 'rgba(255, 255, 255, 0.95)' },
+      { bg1: '#e0f2fe', bg2: '#7dd3fc', accent: '#0284c7', text: '#0c4a6e', card: 'rgba(255, 255, 255, 0.95)' },
+      { bg1: '#1a1a2e', bg2: '#16213e', accent: '#e94560', text: '#ffffff', card: 'rgba(22, 33, 62, 0.9)' },
+      { bg1: '#fff8e1', bg2: '#ffecb3', accent: '#ffa000', text: '#5d4037', card: 'rgba(255, 255, 255, 0.95)' }
+    ];
+
+    function handleHeartClick() {
+      if (isRevealed) {
+        themeIndex = (themeIndex + 1) % themes.length;
+        const t = themes[themeIndex];
+        const root = document.documentElement;
+        root.style.setProperty('--bg-1', t.bg1);
+        root.style.setProperty('--bg-2', t.bg2);
+        root.style.setProperty('--accent', t.accent);
+        root.style.setProperty('--text', t.text);
+        root.style.setProperty('--card-bg', t.card);
+        confetti({ particleCount: 50, spread: 60, colors: [t.accent, '#ffffff'] });
+      } else {
+        revealEverything();
+        isRevealed = true;
+      }
+    }
+
+    document.addEventListener('mousemove', (e) => {
+      const sparkle = document.createElement('div');
+      sparkle.className = 'cursor-sparkle';
+      sparkle.style.left = e.clientX + 'px';
+      sparkle.style.top = e.clientY + 'px';
+      document.body.appendChild(sparkle);
+      setTimeout(() => {
+        sparkle.style.transform = 'scale(0)';
+        sparkle.style.opacity = '0';
+        setTimeout(() => sparkle.remove(), 500);
+      }, 50);
+
+      const moveX = (e.clientX - window.innerWidth / 2) * 0.015;
+      const moveY = (e.clientY - window.innerHeight / 2) * 0.015;
+      document.getElementById('bg-gradient').style.transform = `translate(${-moveX}px, ${-moveY}px)`;
+      document.getElementById('card').style.transform = `rotateY(${moveX * 0.8}deg) rotateX(${-moveY * 0.8}deg)`;
+    });
+
+    setInterval(() => {
+      const emoji = document.createElement('div');
+      emoji.className = 'floating-emoji';
+      emoji.innerText = ['🎂', '❤️', '💖', '🎁', '✨', '🎈', '🍰'][Math.floor(Math.random() * 7)];
+      emoji.style.left = Math.random() * 100 + 'vw';
+      emoji.style.setProperty('--duration', Math.random() * 5 + 5 + 's');
+      document.body.appendChild(emoji);
+      setTimeout(() => emoji.remove(), 10000);
+    }, 600);
+
+    const fullMessage = `Hi Maiko!! Happy 22nd Birthday! At last, the age gap has officially disappeared. Sorry if I couldn't make the birthday card you showed me, as you know I'm not really an arts and crafts person myself, <span class="highlight">HOWEVER I am a DIGITALLY CREATIVE person HEHEHE, kaya I made this for YOU!!!</span><br><br>I hope you like it, I just wanna tell you that I'm extremely grateful for being my pinaka favorite person, you are my safe place, where I can show off my goofiest side, and my daily dose of happiness, love, and affection.<br><br>Everything about you is special, and I can't believe I'm dating someone like you! <span class="highlight">YOU ARE THE LOVE OF MY LIFE!!!</span> I’m so proud and in love of the person you are and everything you’re becoming. I LOVE YOU SO SO SO MUCH!!<br><br>I hope you enjoy your day kahit our plan is simple lang. Cheers to lasting til death and for the memories we make. <span class="highlight">HAPPY BIRTHDAY!! I love you!!</span>`;
+
+    function typeWriter(text, i) {
+      if (i < text.length) {
+        const msgEl = document.getElementById("message");
+        if (text.substring(i, i+1) === '<') {
+          let tagEnd = text.indexOf('>', i);
+          msgEl.innerHTML = text.substring(0, tagEnd + 1);
+          setTimeout(() => typeWriter(text, tagEnd + 1), 15);
+        } else {
+          msgEl.innerHTML = text.substring(0, i + 1);
+          setTimeout(() => typeWriter(text, i + 1), 15);
+        }
+      }
+    }
+
+    function revealEverything() {
+      const title = document.getElementById('title');
+      title.style.opacity = '0';
+      setTimeout(() => { title.innerText = "Wait for it..."; title.style.opacity = '1'; }, 300);
+      setTimeout(() => { title.style.opacity = '0'; }, 1300);
+      setTimeout(() => {
+        title.innerText = "Happy 22nd Birthday!";
+        title.style.opacity = '1';
+        document.getElementById('reveal-section').style.display = 'block';
+        setTimeout(() => { 
+          document.getElementById('reveal-section').style.opacity = '1'; 
+          document.getElementById('footer').style.opacity = '1';
+          typeWriter(fullMessage, 0); 
+        }, 100);
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      }, 1600);
+    }
+  </script>
+</body>
+</html>
